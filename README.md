@@ -5,7 +5,7 @@
 **Unofficial. Not affiliated with or endorsed by Ente.** Duckling is a community
 Firefox extension for people who already use [Ente Auth](https://ente.io/auth).
 
-Status: in development (milestone 2: login and sync).
+Status: in development (milestone 3: lock and storage).
 
 ## What it does
 
@@ -15,14 +15,18 @@ Status: in development (milestone 2: login and sync).
 - Supports TOTP, HOTP, Steam, 8-digit codes and any period, the same way the
   official app parses them.
 - Works with self-hosted Ente servers.
+- Locks itself after a period of inactivity (default 15 minutes), when your
+  computer locks, and when Firefox closes. Unlock with your password or an
+  optional PIN.
+- Clears the clipboard 30 seconds after you copy a code.
 - Not yet: passkey two-factor login (use a TOTP second factor for now).
 
 ## Security model
 
 | Where | What | When it's cleared |
 | --- | --- | --- |
-| Disk (`storage.local`) | Session token, server URL, email, and **encrypted** data only: Ente's key attributes, the encrypted authenticator key, the encrypted 2FA entries | On logout |
-| Memory (`storage.session`) | The decrypted authenticator key | When Firefox closes (or you log out) |
+| Disk (`storage.local`) | Session token, settings, email, and **encrypted** data only: Ente's key attributes, the encrypted authenticator key, the encrypted 2FA entries | On logout |
+| Memory (`storage.session`) | The decrypted authenticator key; if you use a PIN, a PIN-encrypted copy of it | On lock (the key), or when Firefox closes (everything) |
 | Nowhere | Your password, master key, private key, decrypted codes | Wiped right after use |
 
 - Your password never leaves the device. Login uses SRP, the same
@@ -30,6 +34,18 @@ Status: in development (milestone 2: login and sync).
 - Only the *authenticator* key is kept unlocked. Your master key, which could
   also decrypt other Ente data, is wiped as soon as login finishes.
 - After a browser restart Duckling is locked until you enter your password.
+- **Fast unlock.** Ente protects your password with a deliberately slow (1 GiB)
+  key derivation, which takes several seconds. Like Ente's own web app, Duckling
+  keeps a second copy of your encrypted master key, protected by a lighter
+  (64 MiB) derivation, so unlocking takes under a second. The trade-off: someone
+  who steals your disk can guess passwords against that copy faster. A strong
+  Ente password keeps this safe.
+- **PIN.** A PIN is short and easy to guess offline, so it never protects
+  anything on disk. The PIN-encrypted key lives only in memory. After Firefox
+  restarts, or after 5 wrong PINs, you must use your password.
+- **Clipboard.** Duckling can't read your clipboard (that would need another
+  permission), so 30 s after a copy it clears whatever is there. You can turn
+  this off in settings.
 - Network requests go only to the Ente API (or your self-hosted server).
   No analytics, no remote code.
 - Strict content security policy: only the extension's own scripts run.
@@ -45,6 +61,9 @@ client is tested against a known-answer vector from Ente's own server code.
 | Permission | Why |
 | --- | --- |
 | `storage` | Save your encrypted codes and session, and keep the unlocked key in memory-only session storage. |
+| `alarms` | Auto-lock and clipboard-clear timers that still fire if Firefox has paused Duckling's background script. |
+| `idle` | Lock when your computer's screen locks. Duckling only learns "active / idle / locked", nothing else. |
+| `clipboardWrite` | Clear the clipboard 30 s after copying a code, even though the popup has closed by then. Firefox shows this as "Input data to the clipboard". |
 
 No host permissions. Duckling can't read or change any website. Ente's API
 allows requests from extensions directly.
