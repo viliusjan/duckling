@@ -37,6 +37,8 @@ export interface Settings {
   hideCodes: boolean;
   showNextCode: boolean;
   sortBy: SortBy;
+  /** Close the popup right after copying, so you can paste straight away. */
+  closeOnCopy: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -48,6 +50,7 @@ export const DEFAULT_SETTINGS: Settings = {
   hideCodes: false,
   showNextCode: true,
   sortBy: 'issuer',
+  closeOnCopy: true,
 };
 
 /**

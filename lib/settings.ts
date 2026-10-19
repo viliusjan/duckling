@@ -33,6 +33,7 @@ export const updateSettings = async (change: Partial<Settings>): Promise<Setting
   if (typeof change.compact === 'boolean') next.compact = change.compact;
   if (typeof change.hideCodes === 'boolean') next.hideCodes = change.hideCodes;
   if (typeof change.showNextCode === 'boolean') next.showNextCode = change.showNextCode;
+  if (typeof change.closeOnCopy === 'boolean') next.closeOnCopy = change.closeOnCopy;
   if (change.theme !== undefined) {
     if (!THEMES.includes(change.theme)) throw appError('unknown');
     next.theme = change.theme;

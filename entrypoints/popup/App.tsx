@@ -1,20 +1,30 @@
 import { useEffect, useState } from 'preact/hooks';
+import type { ComponentChildren } from 'preact';
 import { browser } from 'wxt/browser';
-import { RemoteError, send, type AppState } from '@/lib/messages';
+import { RemoteError, send, type AppState, type SettingsView } from '@/lib/messages';
+import { DEFAULT_SETTINGS } from '@/lib/storage';
 import { Codes } from './Codes';
 import { LoginEmail, LoginPassword, LoginSecondStep } from './Login';
 import { Settings } from './Settings';
+import { themeHint, useTheme } from './theme';
 import { Unlock } from './Unlock';
 
 export function App() {
   const [state, setState] = useState<AppState>();
+  const [view, setView] = useState<SettingsView>();
   const [showSettings, setShowSettings] = useState(false);
   const [fatal, setFatal] = useState<string>();
+  const settings = view?.settings ?? { ...DEFAULT_SETTINGS, theme: themeHint() };
+  const dark = useTheme(settings.theme);
 
   useEffect(() => {
     const load = () =>
-      send('getState', {}).then(setState, (e: unknown) =>
-        setFatal(e instanceof RemoteError ? e.message : 'Duckling could not start. Try reopening it.'),
+      Promise.all([send('getState', {}), send('getSettings', {})]).then(
+        ([s, v]) => {
+          setState(s);
+          setView(v);
+        },
+        (e: unknown) => setFatal(e instanceof RemoteError ? e.message : 'Duckling could not start. Try reopening it.'),
       );
     void load();
     // If Duckling auto-locks while the popup is open, hide the codes at once.
@@ -31,10 +41,12 @@ export function App() {
   const onState = (s: AppState) => {
     if (s.status !== 'unlocked') setShowSettings(false);
     setState(s);
+    // PIN availability etc. can change with state.
+    void send('getSettings', {}).then(setView, () => undefined);
   };
 
   if (fatal) return <Shell><p class="banner error">{fatal}</p></Shell>;
-  if (!state) return <Shell><p class="muted center">Loading…</p></Shell>;
+  if (!state) return <Shell><div class="empty"><span class="spinner" /></div></Shell>;
 
   switch (state.status) {
     case 'logged-out':
@@ -47,25 +59,14 @@ export function App() {
     case 'locked':
       return <Shell><Unlock state={state} onState={onState} /></Shell>;
     case 'unlocked':
-      return showSettings ? (
-        <Settings onBack={() => setShowSettings(false)} onState={onState} />
+      return showSettings && view ? (
+        <Settings view={view} onView={setView} onBack={() => setShowSettings(false)} onState={onState} />
       ) : (
-        <Codes state={state} onState={onState} onSettings={() => setShowSettings(true)} />
+        <Codes state={state} settings={settings} dark={dark} onState={onState} onSettings={() => setShowSettings(true)} />
       );
   }
 }
 
-function Shell({ children }: { children: preact.ComponentChildren }) {
-  return (
-    <main class="auth">
-      <header class="brand">
-        <img src="/icon/48.png" alt="" width={32} height={32} />
-        <div>
-          <h1>Duckling</h1>
-          <p class="muted small">Unofficial Ente Auth · not affiliated with Ente</p>
-        </div>
-      </header>
-      {children}
-    </main>
-  );
+function Shell({ children }: { children: ComponentChildren }) {
+  return <main class="auth">{children}</main>;
 }
