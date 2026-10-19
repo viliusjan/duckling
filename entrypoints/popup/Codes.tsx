@@ -5,6 +5,7 @@ import { generateOTPs, msRemaining, type Code } from '@/lib/otp/code';
 interface Props {
   state: Extract<AppState, { status: 'unlocked' }>;
   onState: (s: AppState) => void;
+  onSettings: () => void;
 }
 
 /** "123456" -> "123 456", "12345678" -> "1234 5678"; Steam (5 letters) as is. */
@@ -21,7 +22,7 @@ const timeAgo = (ms: number) => {
   return `${Math.floor(s / 3600)} h ago`;
 };
 
-export function Codes({ state, onState }: Props) {
+export function Codes({ state, onState, onSettings }: Props) {
   const [result, setResult] = useState<CodesResult>();
   const [error, setError] = useState<string>();
   const [syncing, setSyncing] = useState(false);
@@ -79,6 +80,9 @@ export function Codes({ state, onState }: Props) {
         <button type="button" class="icon" title="Sync now" aria-label="Sync now" disabled={syncing} onClick={refresh}>
           <span class={syncing ? 'spin' : ''}>⟳</span>
         </button>
+        <button type="button" class="icon" title="Settings" aria-label="Settings" onClick={onSettings}>
+          ⚙
+        </button>
       </form>
 
       {error && <p class="banner error">{error}</p>}
@@ -103,15 +107,23 @@ export function Codes({ state, onState }: Props) {
         <span class="muted small" title={state.email}>
           {result?.lastSync ? `Synced ${timeAgo(result.lastSync)}` : syncing ? 'Syncing…' : ''}
         </span>
-        <button type="button" class="link small" onClick={() => void send('logout', {}).then(onState)}>
-          Log out
+        <button type="button" class="link small" onClick={() => void send('lock', {}).then(onState)}>
+          🔒 Lock now
         </button>
       </footer>
     </main>
   );
 }
 
-const copy = (text: string) => navigator.clipboard.writeText(text).catch(() => undefined);
+/** Copy, then let the background schedule the 30 s clipboard clear (it outlives the popup). */
+const copy = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    await send('copied', {});
+  } catch {
+    // Copy failed or background busy; nothing else to do.
+  }
+};
 
 function CodeRow({ code, offset, now }: { code: Code; offset: number; now: number }) {
   const [copied, setCopied] = useState(false);

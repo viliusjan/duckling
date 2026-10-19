@@ -99,3 +99,25 @@ button:disabled { opacity: 0.6; cursor: default; }
 .ring.urgent .fill { stroke: var(--urgent); }
 footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-top: 1px solid var(--border); margin-top: 6px; }
 footer .link { align-self: center; }
+
+/* --- Settings --- */
+.settings { gap: 18px; }
+.settings-header { display: flex; align-items: center; gap: 10px; }
+.settings-header h1 { margin: 0; font-size: 18px; }
+.settings-header .icon { height: 34px; }
+section { display: flex; flex-direction: column; gap: 10px; }
+section h2 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+}
+.toggle { flex-direction: row; align-items: flex-start; gap: 10px; font-weight: 400; cursor: pointer; }
+.toggle input { margin: 2px 0 0; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
+.block { display: block; }
+.row { align-items: center; }
+.small-btn { padding: 7px 14px; }
+footer .link { font-weight: 500; }

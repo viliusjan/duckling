@@ -114,10 +114,9 @@ export function LoginSecondStep({ state, onState }: Props<'email-otp' | 'totp'>)
   );
 }
 
-export function LoginPassword({ state, onState }: Props<'password' | 'locked'>) {
+export function LoginPassword({ state, onState }: Props<'password'>) {
   const [password, setPassword] = useState('');
   const { busy, error, run } = useAction();
-  const locked = state.status === 'locked';
 
   const submit = (e: Event) => {
     e.preventDefault();
@@ -133,7 +132,7 @@ export function LoginPassword({ state, onState }: Props<'password' | 'locked'>) 
   return (
     <form onSubmit={submit}>
       <p>
-        {locked ? 'Duckling is locked. Enter the' : 'Enter the'} Ente password for <strong>{state.email}</strong>.
+        Enter the Ente password for <strong>{state.email}</strong>.
       </p>
       <label>
         Password
@@ -148,17 +147,11 @@ export function LoginPassword({ state, onState }: Props<'password' | 'locked'>) 
       </label>
       {error && <p class="banner error">{error}</p>}
       <button type="submit" class="primary" disabled={busy}>
-        {busy ? 'Decrypting…' : locked ? 'Unlock' : 'Log in'}
+        {busy ? 'Decrypting…' : 'Log in'}
       </button>
       {busy && <p class="muted small center">Deriving your key. This takes a few seconds by design.</p>}
       <div class="row">
-        {locked ? (
-          <button type="button" class="link small" onClick={() => void send('logout', {}).then(onState)}>
-            Log out
-          </button>
-        ) : (
-          <BackButton onState={onState} />
-        )}
+        <BackButton onState={onState} />
       </div>
     </form>
   );
