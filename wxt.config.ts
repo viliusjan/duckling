@@ -9,6 +9,8 @@ export default defineConfig({
     build: {
       // Readable output makes AMO source review easier and builds reproducible.
       minify: false,
+      // Firefox supports modulepreload natively; skip Vite's fetch()-based polyfill.
+      modulePreload: { polyfill: false },
     },
   }),
   manifest: {
