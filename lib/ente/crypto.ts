@@ -73,6 +73,27 @@ export const deriveSRPLoginKey = (kek: Uint8Array): Uint8Array => {
   return loginKey;
 };
 
+/**
+ * Argon2id "interactive" parameters: 64 MiB, 2 passes.
+ * Source: rust/crates/core/src/crypto/argon.rs `Params::INTERACTIVE`.
+ */
+export const ARGON_INTERACTIVE = { opsLimit: 2, memLimit: 67_108_864 } as const;
+
+/** 16 random bytes, base64 (crypto_pwhash_SALTBYTES, as argon.rs `Salt`). */
+export const randomSaltB64 = (): string => toB64(sodium.randombytes_buf(sodium.crypto_pwhash_SALTBYTES));
+
+// --- Encryption ---------------------------------------------------------------
+
+/**
+ * XSalsa20-Poly1305 secretbox with a random 24-byte nonce.
+ * Source: rust/crates/core/src/crypto/secretbox.rs `encrypt`
+ * (web: `cryptoEncryptBox` / `encryptBox`).
+ */
+export const encryptBox = (data: Uint8Array, key: Uint8Array): { encryptedData: string; nonce: string } => {
+  const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
+  return { encryptedData: toB64(sodium.crypto_secretbox_easy(data, nonce, key)), nonce: toB64(nonce) };
+};
+
 // --- Decryption ---------------------------------------------------------------
 
 /**
