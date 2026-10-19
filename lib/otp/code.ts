@@ -9,10 +9,20 @@ import { steamOTP } from './steam.ts';
 
 export type Algorithm = 'sha1' | 'sha256' | 'sha512';
 
+/**
+ * Display metadata stored in the URI's `codeDisplay` param. Fields as in the
+ * official app: mobile/apps/auth/lib/models/code_display.dart (ente-io/ente).
+ */
 export interface CodeDisplay {
   trashed?: boolean;
   pinned?: boolean;
   note?: string;
+  tags?: string[];
+  /** Manual sort order chosen in the app. */
+  position?: number;
+  /** Icon the user picked in the app (used when both are set). */
+  iconSrc?: string;
+  iconID?: string;
 }
 
 export interface Code {
@@ -135,10 +145,15 @@ const parseCodeDisplay = (url: URL): CodeDisplay | undefined => {
     const v: unknown = JSON.parse(s);
     if (typeof v !== 'object' || v === null) return undefined;
     const o = v as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === 'string' && v !== '' ? v : undefined);
     return {
       trashed: o.trashed === true ? true : undefined,
       pinned: o.pinned === true ? true : undefined,
-      note: typeof o.note === 'string' ? o.note : undefined,
+      note: str(o.note),
+      tags: Array.isArray(o.tags) ? o.tags.filter((t): t is string => typeof t === 'string' && t !== '') : undefined,
+      position: typeof o.position === 'number' && Number.isFinite(o.position) ? o.position : undefined,
+      iconSrc: str(o.iconSrc),
+      iconID: str(o.iconID),
     };
   } catch {
     return undefined;
