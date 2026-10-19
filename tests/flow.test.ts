@@ -92,7 +92,9 @@ test('SRP + TOTP finishes right after the 2FA code', async () => {
   assert.equal((await account.submitPassword(server.password)).status, 'totp');
   assert.equal((await account.submitTotp(TOTP_CODE)).status, 'unlocked');
   // The stashed KEK is gone once login completes.
-  assert.deepEqual(Object.keys(await fakeBrowser.storage.session.get(null)), ['authKeyB64']);
+  const session = await fakeBrowser.storage.session.get(null);
+  assert.equal(session.pending, undefined);
+  assert.deepEqual(Object.keys(session).sort(), ['authKeyB64', 'lastActivity']);
 });
 
 test('passkey-only accounts get a clear error', async () => {

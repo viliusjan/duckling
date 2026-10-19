@@ -48,6 +48,8 @@ export class FakeEnte {
   srpSessions = new Map<string, { A: Uint8Array; b: bigint; B: Uint8Array }>();
   calls: string[] = [];
   tokenRevoked = false;
+  /** Ente only creates the authenticator key when the first code is added. */
+  hasAuthKey = true;
 
   constructor(opts: FakeOptions = {}) {
     this.opts = opts;
@@ -140,7 +142,8 @@ export class FakeEnte {
         if (body.sessionID !== '2fa-session') return json(404, {});
         return body.code === TOTP_CODE ? json(200, this.authResponse()) : json(401, {});
       case '/authenticator/key':
-        return authed() ? json(200, this.authKeyEnc) : json(401, {});
+        if (!authed()) return json(401, {});
+        return this.hasAuthKey ? json(200, this.authKeyEnc) : json(404, {});
       case '/authenticator/entity/diff': {
         if (!authed()) return json(401, {});
         const since = Number(url.searchParams.get('sinceTime'));
