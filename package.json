@@ -6,14 +6,16 @@
   "type": "module",
   "license": "AGPL-3.0-only",
   "scripts": {
-    "dev": "wxt -b firefox",
-    "build": "wxt build -b firefox",
-    "zip": "wxt zip -b firefox",
+    "dev": "npm run icons && wxt -b firefox",
+    "build": "npm run icons && wxt build -b firefox",
+    "zip": "npm run icons && wxt zip -b firefox",
     "compile": "tsc --noEmit",
     "lint:ext": "web-ext lint --source-dir .output/firefox-mv3",
     "postinstall": "wxt prepare",
     "test": "node --test --experimental-strip-types --no-warnings \"tests/**/*.test.ts\"",
-    "fake-server": "node --experimental-strip-types --no-warnings tests/fake-server.ts"
+    "fake-server": "node --experimental-strip-types --no-warnings tests/fake-server.ts",
+    "icons": "node --experimental-strip-types --no-warnings scripts/build-icons.ts",
+    "pretest": "npm run icons --silent"
   },
   "dependencies": {
     "@noble/hashes": "2.4.0",
@@ -22,9 +24,11 @@
     "preact": "11.0.1"
   },
   "devDependencies": {
+    "@fontsource/inter": "5.3.0",
     "@preact/preset-vite": "2.10.6",
     "@types/libsodium-wrappers-sumo": "0.8.2",
     "@types/node": "22.20.5",
+    "simple-icons": "16.33.0",
     "typescript": "7.0.2",
     "web-ext": "10.8.0",
     "wxt": "0.21.4"
