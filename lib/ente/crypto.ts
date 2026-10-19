@@ -116,7 +116,7 @@ export const decryptBlobLegacy = (
   key: Uint8Array,
 ): Uint8Array => {
   const state = sodium.crypto_secretstream_xchacha20poly1305_init_pull(fromB64(headerB64), key);
-  const result = sodium.crypto_secretstream_xchacha20poly1305_pull(state, fromB64(encryptedDataB64));
+  const result = sodium.crypto_secretstream_xchacha20poly1305_pull(state, fromB64(encryptedDataB64), null);
   // libsodium.js returns false (or throws) when authentication fails.
   if (!result) throw new Error('decryption failed');
   return result.message;
