@@ -5,13 +5,23 @@
 **Unofficial. Not affiliated with or endorsed by Ente.** Duckling is a community
 Firefox extension for people who already use [Ente Auth](https://ente.io/auth).
 
-Status: in development (milestone 3: lock and storage).
+Status: in development (milestone 4: UX polish).
 
 ## What it does
 
 - Log in with your Ente email and password, including email verification and
   authenticator-app (TOTP) two-factor login on your Ente account.
-- Shows your codes with a live countdown. Click a code to copy it.
+- Looks like the official app: the same service icons (Ente's custom icons
+  plus Simple Icons), countdown bars, next code, pinned codes, tags, and the
+  icon you picked in Ente Auth. Light and dark themes.
+- **This site first:** codes for the website you're on are shown at the top.
+  Matching uses the real domain, so a lookalike phishing site won't get your code.
+- **Keyboard first:** press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>2</kbd>, type
+  to search, <kbd>↑</kbd>/<kbd>↓</kbd> to choose, <kbd>Enter</kbd> to copy
+  (<kbd>Shift</kbd>+<kbd>Enter</kbd> copies the next code), <kbd>Esc</kbd> to
+  clear or close. Duckling closes after copying so you can paste right away.
+- Sort by name, account, your Ente Auth order, most used or recently used;
+  compact list; hide codes while screen sharing.
 - Supports TOTP, HOTP, Steam, 8-digit codes and any period, the same way the
   official app parses them.
 - Works with self-hosted Ente servers.
@@ -63,6 +73,7 @@ client is tested against a known-answer vector from Ente's own server code.
 | `storage` | Save your encrypted codes and session, and keep the unlocked key in memory-only session storage. |
 | `alarms` | Auto-lock and clipboard-clear timers that still fire if Firefox has paused Duckling's background script. |
 | `idle` | Lock when your computer's screen locks. Duckling only learns "active / idle / locked", nothing else. |
+| `activeTab` | Read the address of the tab you're on *when you open Duckling*, to show that site's codes first. No access to page content, no install prompt. |
 | `clipboardWrite` | Clear the clipboard 30 s after copying a code, even though the popup has closed by then. Firefox shows this as "Input data to the clipboard". |
 
 No host permissions. Duckling can't read or change any website. Ente's API
@@ -103,5 +114,11 @@ step takes a few seconds, just like the real thing.
 
 Duckling ports protocol and crypto logic from [ente-io/ente](https://github.com/ente-io/ente)
 (AGPL-3.0). Thank you to the Ente team.
+
+- Service icons: Ente Auth's custom icons ([ente-io/ente](https://github.com/ente-io/ente), AGPL-3.0)
+  and [Simple Icons](https://simpleicons.org) (CC0-1.0). Logos are trademarks of
+  their owners and are used only to identify services.
+- Interface icons: [Lucide](https://lucide.dev) (ISC).
+- Font: [Inter](https://rsms.me/inter/) (SIL Open Font License 1.1).
 
 Licensed under [AGPL-3.0](LICENSE).

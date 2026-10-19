@@ -10,11 +10,14 @@ const fake = new FakeEnte({
   totp: true,
   opsLimit: 4, memLimit: 1024 * 1024 * 1024, // Ente "sensitive" params, as real accounts use
   uris: [
-    'otpauth://totp/GitHub:tadas?secret=JBSWY3DPEHPK3PXP&issuer=GitHub',
-    'otpauth://totp/Google:personal?secret=JBSWY3DPEHPK3PXQ&issuer=Google',
-    'otpauth://totp/Discord?secret=JBSWY3DPEHPK3PXR&issuer=Discord',
-    'otpauth://steam/Steam:gaben?secret=JBSWY3DPEHPK3PXS&issuer=Steam',
-    'otpauth://totp/Acme%20Corp:admin@acme.test?secret=JBSWY3DPEHPK3PXT&issuer=Acme%20Corp&digits=8&period=60&codeDisplay=%7B%22pinned%22%3Atrue%7D',
+    'otpauth://totp/GitHub:tadas?secret=JBSWY3DPEHPK3PXP&issuer=GitHub&codeDisplay=%7B%22pinned%22%3Atrue%2C%22tags%22%3A%5B%22Dev%22%5D%7D',
+    'otpauth://totp/Google:personal%40gmail.com?secret=JBSWY3DPEHPK3PXQ&issuer=Google&codeDisplay=%7B%22tags%22%3A%5B%22Personal%22%5D%7D',
+    'otpauth://totp/Discord:duck%230001?secret=JBSWY3DPEHPK3PXR&issuer=Discord&codeDisplay=%7B%22tags%22%3A%5B%22Personal%22%5D%7D',
+    'otpauth://steam/Steam:gaben?secret=JBSWY3DPEHPK3PXS&issuer=Steam&codeDisplay=%7B%22tags%22%3A%5B%22Personal%22%5D%7D',
+    'otpauth://totp/Acme%20Corp:admin%40acme.test?secret=JBSWY3DPEHPK3PXT&issuer=Acme%20Corp&digits=8&period=60&codeDisplay=%7B%22tags%22%3A%5B%22Work%22%5D%2C%22note%22%3A%22Backup%20codes%20are%20in%20the%20safe%22%7D',
+    'otpauth://totp/Proton:duck%40proton.me?secret=JBSWY3DPEHPK3PXU&issuer=Proton',
+    'otpauth://totp/Cloudflare:ops%40acme.test?secret=JBSWY3DPEHPK3PXV&issuer=Cloudflare&codeDisplay=%7B%22tags%22%3A%5B%22Work%22%2C%22Dev%22%5D%7D',
+    'otpauth://totp/KTU:viljan9?secret=JBSWY3DPEHPK3PXW&issuer=KTU',
   ],
 });
 console.log(`keys generated in ${Date.now() - t0} ms`);
