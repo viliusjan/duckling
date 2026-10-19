@@ -22,6 +22,9 @@ export interface FakeOptions {
   /** Simulate network failures. */
   offline?: boolean;
   serverDown?: boolean;
+  /** Argon2id params; defaults are small so tests run fast. */
+  opsLimit?: number;
+  memLimit?: number;
 }
 
 export const OTT = '111111';
@@ -31,8 +34,8 @@ export class FakeEnte {
   readonly email: string;
   readonly password: string;
   opts: FakeOptions;
-  readonly ops = 2;
-  readonly mem = 64 * 1024 * 1024;
+  readonly ops: number;
+  readonly mem: number;
   keyAttributes!: Record<string, string | number>;
   publicKey!: Uint8Array;
   token = sodium.randombytes_buf(32);
@@ -50,6 +53,8 @@ export class FakeEnte {
     this.opts = opts;
     this.email = opts.email ?? 'test@example.com';
     this.password = opts.password ?? 'hunter2-but-longer';
+    this.ops = opts.opsLimit ?? 2;
+    this.mem = opts.memLimit ?? 64 * 1024 * 1024;
 
     const masterKey = sodium.crypto_secretbox_keygen();
     const kekSalt = sodium.randombytes_buf(16);

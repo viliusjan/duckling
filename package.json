@@ -12,7 +12,8 @@
     "compile": "tsc --noEmit",
     "lint:ext": "web-ext lint --source-dir .output/firefox-mv3",
     "postinstall": "wxt prepare",
-    "test": "node --test --experimental-strip-types --no-warnings \"tests/**/*.test.ts\""
+    "test": "node --test --experimental-strip-types --no-warnings \"tests/**/*.test.ts\"",
+    "fake-server": "node --experimental-strip-types --no-warnings tests/fake-server.ts"
   },
   "dependencies": {
     "@noble/hashes": "2.4.0",
