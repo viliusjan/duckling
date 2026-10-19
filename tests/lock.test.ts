@@ -35,6 +35,9 @@ beforeEach(() => {
 const rejectsWith = (p: Promise<unknown>, code: string) =>
   assert.rejects(p, (e: unknown) => e instanceof AppError && e.code === code);
 const status = async () => (await account.getState()).status;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Loose = Record<string, any>;
+const localGet = async (k: string | string[]) => (await fakeBrowser.storage.local.get(k)) as Loose;
 const restartBrowser = () => fakeBrowser.storage.session.clear();
 
 const login = async (opts: ConstructorParameters<typeof FakeEnte>[0] = { uris: [URI] }) => {
@@ -46,7 +49,7 @@ const login = async (opts: ConstructorParameters<typeof FakeEnte>[0] = { uris: [
 
 test('login stores fast-unlock attributes; unlock uses them', async () => {
   await login();
-  const { unlockKeyAttributes, keyAttributes } = await fakeBrowser.storage.local.get(['unlockKeyAttributes', 'keyAttributes']);
+  const { unlockKeyAttributes, keyAttributes } = await localGet(['unlockKeyAttributes', 'keyAttributes']);
   assert.equal(unlockKeyAttributes.memLimit, 67_108_864, 'Ente interactive params');
   assert.equal(unlockKeyAttributes.opsLimit, 2);
   assert.notEqual(unlockKeyAttributes.encryptedKey, keyAttributes.encryptedKey);
@@ -63,7 +66,7 @@ test('SRP + 2FA login also gets fast unlock (interactive KEK stashed during 2FA)
   globalThis.fetch = server.fetch as typeof fetch;
   await account.startLogin(server.email, ORIGIN);
   await account.submitPassword(server.password);
-  const { pending } = await fakeBrowser.storage.session.get('pending');
+  const { pending } = (await fakeBrowser.storage.session.get('pending')) as Loose;
   assert.ok(pending.unlockKek, 'stashed in memory while waiting for 2FA');
   await account.submitTotp('123456');
   assert.ok((await fakeBrowser.storage.local.get('unlockKeyAttributes')).unlockKeyAttributes);
