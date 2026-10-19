@@ -20,6 +20,9 @@ export interface SecretBox {
   nonce: string;
 }
 
+export type SortBy = 'issuer' | 'account' | 'manual' | 'mostUsed' | 'recent';
+export type Theme = 'system' | 'light' | 'dark';
+
 export interface Settings {
   /** Lock after this many minutes without using Duckling. 0 = only when Firefox closes. */
   autoLockMinutes: number;
@@ -27,9 +30,25 @@ export interface Settings {
   lockOnSystemLock: boolean;
   /** Clear the clipboard 30 s after copying a code. */
   clearClipboard: boolean;
+  theme: Theme;
+  /** One-line rows, like the app's compact mode. */
+  compact: boolean;
+  /** Show •••••• until you hover a code (for screen sharing). Copying still works. */
+  hideCodes: boolean;
+  showNextCode: boolean;
+  sortBy: SortBy;
 }
 
-export const DEFAULT_SETTINGS: Settings = { autoLockMinutes: 15, lockOnSystemLock: true, clearClipboard: true };
+export const DEFAULT_SETTINGS: Settings = {
+  autoLockMinutes: 15,
+  lockOnSystemLock: true,
+  clearClipboard: true,
+  theme: 'system',
+  compact: false,
+  hideCodes: false,
+  showNextCode: true,
+  sortBy: 'issuer',
+};
 
 /**
  * Master key re-encrypted with a faster ("interactive") Argon2id KEK, for quick
@@ -68,6 +87,9 @@ export interface LocalData {
   settings: Settings;
   unlockKeyAttributes: UnlockKeyAttributes; // encrypted master key (faster Argon2id)
   pin: PinSetup; // encrypted PIN key (only if the user enabled a PIN)
+  /** How often/recently each code was copied, for "most used" sorting.
+   *  Encrypted with the authenticator key, since it reveals which accounts you use. */
+  usageEnc: SecretBox;
 }
 
 /** Login progress between popup steps (survives the background being suspended). */
@@ -132,4 +154,5 @@ export const ACCOUNT_KEYS: (keyof LocalData)[] = [
   'lastSync',
   'unlockKeyAttributes',
   'pin',
+  'usageEnc',
 ];

@@ -15,6 +15,7 @@ import { AppError, appError, serializeError } from './errors.ts';
 import type { CodesResult } from './messages.ts';
 import { codeFromURIString, type Code } from './otp/code.ts';
 import { getLocal, getSession, setLocal, type EncryptedEntity } from './storage.ts';
+import { getUsage } from './usage.ts';
 
 const DIFF_BATCH_SIZE = 2500; // same as remote.ts
 
@@ -77,7 +78,7 @@ export const getCodes = async (): Promise<CodesResult> => {
   const { authKeyB64 } = await getSession('authKeyB64');
   if (authKeyB64 === undefined) throw appError('locked');
   const { entities = {}, timeOffset = 0, lastSync } = await getLocal('entities', 'timeOffset', 'lastSync');
-  if (authKeyB64 === '') return { codes: [], timeOffset, lastSync, unreadable: Object.keys(entities).length };
+  if (authKeyB64 === '') return { codes: [], timeOffset, lastSync, unreadable: Object.keys(entities).length, usage: {} };
 
   await initCrypto();
   const key = fromB64(authKeyB64);
@@ -97,7 +98,13 @@ export const getCodes = async (): Promise<CodesResult> => {
     wipe(key);
   }
 
-  return { codes: sortCodes(codes.filter((c) => !c.codeDisplay?.trashed)), timeOffset, lastSync, unreadable };
+  return {
+    codes: sortCodes(codes.filter((c) => !c.codeDisplay?.trashed)),
+    timeOffset,
+    lastSync,
+    unreadable,
+    usage: await getUsage(),
+  };
 };
 
 /** Pinned first, then by issuer; codes without an issuer last (remote.ts). */

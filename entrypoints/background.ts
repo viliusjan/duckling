@@ -11,6 +11,7 @@ import type { Message, Requests, RequestType } from '@/lib/messages';
 import { removePin, setPin, unlockWithPin } from '@/lib/pin';
 import { getSettingsView, updateSettings } from '@/lib/settings';
 import { getCodes, syncAndGetCodes } from '@/lib/sync';
+import { recordUse } from '@/lib/usage';
 
 type Handlers = { [T in RequestType]: (payload: Requests[T]['req']) => Promise<Requests[T]['res']> };
 
@@ -33,8 +34,9 @@ const handlers: Handlers = {
     await unlockWithPin(pin);
     return account.getState();
   },
-  copied: async () => {
+  copied: async ({ id }) => {
     await scheduleClipboardClear();
+    if (typeof id === 'string') await recordUse(id);
     return null;
   },
   getSettings: () => getSettingsView(),

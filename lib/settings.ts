@@ -3,7 +3,10 @@ import { appError } from './errors.ts';
 import { AUTOLOCK_CHOICES, getSettings, isUnlocked, touch } from './lock.ts';
 import type { SettingsView } from './messages.ts';
 import { pinAvailable } from './pin.ts';
-import { getLocal, getSession, setLocal, type Settings } from './storage.ts';
+import { getLocal, getSession, setLocal, type Settings, type SortBy, type Theme } from './storage.ts';
+
+const THEMES: Theme[] = ['system', 'light', 'dark'];
+const SORTS: SortBy[] = ['issuer', 'account', 'manual', 'mostUsed', 'recent'];
 
 export const getSettingsView = async (): Promise<SettingsView> => {
   const { email = '', apiOrigin = DEFAULT_API_ORIGIN, pin } = await getLocal('email', 'apiOrigin', 'pin');
@@ -27,6 +30,17 @@ export const updateSettings = async (change: Partial<Settings>): Promise<Setting
   }
   if (typeof change.lockOnSystemLock === 'boolean') next.lockOnSystemLock = change.lockOnSystemLock;
   if (typeof change.clearClipboard === 'boolean') next.clearClipboard = change.clearClipboard;
+  if (typeof change.compact === 'boolean') next.compact = change.compact;
+  if (typeof change.hideCodes === 'boolean') next.hideCodes = change.hideCodes;
+  if (typeof change.showNextCode === 'boolean') next.showNextCode = change.showNextCode;
+  if (change.theme !== undefined) {
+    if (!THEMES.includes(change.theme)) throw appError('unknown');
+    next.theme = change.theme;
+  }
+  if (change.sortBy !== undefined) {
+    if (!SORTS.includes(change.sortBy)) throw appError('unknown');
+    next.sortBy = change.sortBy;
+  }
   await setLocal({ settings: next });
   await touch();
   return getSettingsView();

@@ -6,6 +6,7 @@ import { browser } from 'wxt/browser';
 import type { SerializedError } from './errors.ts';
 import type { Code } from './otp/code.ts';
 import type { Settings } from './storage.ts';
+import type { UsageMap } from './usage.ts';
 
 type LoginStep = 'password' | 'email-otp' | 'totp';
 
@@ -37,6 +38,8 @@ export interface CodesResult {
   unreadable: number;
   /** Set when a sync was attempted and failed; cached codes are still returned. */
   syncError?: SerializedError;
+  /** Local copy stats per code id, for sorting. */
+  usage: UsageMap;
 }
 
 export interface Requests {
@@ -52,7 +55,7 @@ export interface Requests {
   logout: { req: Record<string, never>; res: AppState };
   lock: { req: Record<string, never>; res: AppState };
   unlockWithPin: { req: { pin: string }; res: AppState };
-  copied: { req: Record<string, never>; res: null };
+  copied: { req: { id: string }; res: null };
   getSettings: { req: Record<string, never>; res: SettingsView };
   updateSettings: { req: Partial<Settings>; res: SettingsView };
   setPin: { req: { pin: string }; res: SettingsView };
