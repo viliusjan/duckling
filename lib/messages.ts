@@ -6,11 +6,11 @@ import { browser } from 'wxt/browser';
 import type { SerializedError } from './errors.ts';
 import type { Code } from './otp/code.ts';
 
+type SignedInStatus = 'password' | 'email-otp' | 'totp' | 'locked' | 'unlocked';
+
 export type AppState =
   | { status: 'logged-out'; email?: string; apiOrigin: string; notice?: SerializedError }
-  | { status: 'password' | 'email-otp' | 'totp'; email: string; apiOrigin: string }
-  | { status: 'locked'; email: string; apiOrigin: string }
-  | { status: 'unlocked'; email: string; apiOrigin: string };
+  | { [S in SignedInStatus]: { status: S; email: string; apiOrigin: string } }[SignedInStatus];
 
 export interface CodesResult {
   codes: Code[];
