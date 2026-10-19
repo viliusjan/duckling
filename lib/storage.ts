@@ -15,6 +15,44 @@ export interface EncryptedEntity {
   header: string;
 }
 
+export interface SecretBox {
+  encryptedData: string;
+  nonce: string;
+}
+
+export interface Settings {
+  /** Lock after this many minutes without using Duckling. 0 = only when Firefox closes. */
+  autoLockMinutes: number;
+  /** Lock when the computer's screen locks. */
+  lockOnSystemLock: boolean;
+  /** Clear the clipboard 30 s after copying a code. */
+  clearClipboard: boolean;
+}
+
+export const DEFAULT_SETTINGS: Settings = { autoLockMinutes: 15, lockOnSystemLock: true, clearClipboard: true };
+
+/**
+ * Master key re-encrypted with a faster ("interactive") Argon2id KEK, for quick
+ * unlocks. Same idea and fields as Ente's interactive key attributes:
+ * web/packages/accounts/services/key-attributes.ts `generateInteractiveKeyAttributes`.
+ */
+export interface UnlockKeyAttributes {
+  kekSalt: string;
+  opsLimit: number;
+  memLimit: number;
+  encryptedKey: string;
+  keyDecryptionNonce: string;
+}
+
+/** Optional PIN. The PIN key is stored encrypted with the authenticator key,
+ *  so it can only be recovered after a password unlock. */
+export interface PinSetup {
+  salt: string;
+  opsLimit: number;
+  memLimit: number;
+  pinKeyEnc: SecretBox;
+}
+
 /** Everything allowed on disk. Nothing in here is decrypted secret material. */
 export interface LocalData {
   apiOrigin: string; // setting: Ente or self-hosted server
@@ -27,6 +65,9 @@ export interface LocalData {
   sinceTime: number; // sync cursor (server microseconds)
   timeOffset: number; // server clock - local clock (ms)
   lastSync: number; // epoch ms
+  settings: Settings;
+  unlockKeyAttributes: UnlockKeyAttributes; // encrypted master key (faster Argon2id)
+  pin: PinSetup; // encrypted PIN key (only if the user enabled a PIN)
 }
 
 /** Login progress between popup steps (survives the background being suspended). */
@@ -39,6 +80,8 @@ export interface PendingLogin {
   /** KEK, base64. Kept while waiting for a 2FA code, like Ente's
    *  `stashKeyEncryptionKeyInSessionStore` (web/packages/accounts). */
   kekB64?: string;
+  /** Interactive KEK derived while we still had the password (see UnlockKeyAttributes). */
+  unlockKek?: { keyB64: string; salt: string; opsLimit: number; memLimit: number };
   twoFactorSessionID?: string;
   userID?: number;
   keyAttributes?: KeyAttributes;
@@ -48,8 +91,15 @@ export interface PendingLogin {
 
 /** Everything allowed in memory-only storage. */
 export interface SessionData {
-  authKeyB64: string; // decrypted authenticator key
+  authKeyB64: string; // decrypted authenticator key ('' if the account has no codes yet)
   pending: PendingLogin;
+  /** Authenticator key encrypted with the PIN key. Memory only, so after a
+   *  browser restart the password is always required. */
+  pinWrapped: SecretBox;
+  pinAttempts: number;
+  lastActivity: number; // epoch ms, for auto-lock
+  /** Why we locked, if the user should know (e.g. new codes need the password). */
+  lockNotice: { code: 'new-codes'; message: string };
 }
 
 const local = browser.storage.local;
@@ -80,4 +130,6 @@ export const ACCOUNT_KEYS: (keyof LocalData)[] = [
   'sinceTime',
   'timeOffset',
   'lastSync',
+  'unlockKeyAttributes',
+  'pin',
 ];

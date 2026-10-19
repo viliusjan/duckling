@@ -8,6 +8,7 @@
  * offline) and each sync only downloads changes.
  */
 import { clearAccount } from './account.ts';
+import { lock } from './lock.ts';
 import { DEFAULT_API_ORIGIN, EnteApi } from './ente/api.ts';
 import { decryptMetadataJSON, fromB64, initCrypto, wipe } from './ente/crypto.ts';
 import { AppError, appError, serializeError } from './errors.ts';
@@ -31,6 +32,18 @@ const doSync = async (): Promise<void> => {
   );
   if (!token) throw appError('session-expired');
   const api = new EnteApi(apiOrigin, token);
+
+  // Ente creates the authenticator key when the first code is added. If there
+  // was none at login, check again: decrypting it needs the master key, so we
+  // lock and ask for the password (unlock() then decrypts it).
+  const { authKeyEnc } = await getLocal('authKeyEnc');
+  if (!authKeyEnc) {
+    const created = await api.getAuthenticatorKey();
+    if (created) {
+      await setLocal({ authKeyEnc: created });
+      await lock({ code: 'new-codes', message: 'New codes were added to your account. Enter your password to show them.' });
+    }
+  }
 
   const updated: Record<string, EncryptedEntity> = { ...entities };
   let since = sinceTime;

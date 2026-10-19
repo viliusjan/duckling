@@ -18,6 +18,11 @@ export type ErrorCode =
   | 'invalid-server-url'
   | 'unexpected-response'
   | 'locked'
+  | 'wrong-pin'
+  | 'pin-locked-out' // too many wrong PINs; password required
+  | 'pin-unavailable' // no PIN set, or Firefox restarted since
+  | 'pin-too-short'
+  | 'no-codes-yet' // PIN needs the authenticator key, which only exists once you have codes
   | 'unknown';
 
 export class AppError extends Error {
@@ -45,6 +50,11 @@ export const messages: Record<ErrorCode, string> = {
   'invalid-server-url': 'That server URL is not valid. It should look like https://api.example.com',
   'unexpected-response': 'The server sent a response Duckling did not understand.',
   locked: 'Duckling is locked.',
+  'wrong-pin': 'Incorrect PIN.',
+  'pin-locked-out': 'Too many incorrect PINs. Enter your Ente password instead.',
+  'pin-unavailable': 'Enter your Ente password. The PIN works again after that.',
+  'pin-too-short': 'Use at least 4 digits for your PIN.',
+  'no-codes-yet': 'Add a code in Ente Auth first, then set a PIN.',
   unknown: 'Something went wrong. Please try again.',
 };
 

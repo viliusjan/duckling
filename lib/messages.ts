@@ -5,12 +5,29 @@
 import { browser } from 'wxt/browser';
 import type { SerializedError } from './errors.ts';
 import type { Code } from './otp/code.ts';
+import type { Settings } from './storage.ts';
 
-type SignedInStatus = 'password' | 'email-otp' | 'totp' | 'locked' | 'unlocked';
+type LoginStep = 'password' | 'email-otp' | 'totp';
 
 export type AppState =
   | { status: 'logged-out'; email?: string; apiOrigin: string; notice?: SerializedError }
-  | { [S in SignedInStatus]: { status: S; email: string; apiOrigin: string } }[SignedInStatus];
+  | { [S in LoginStep]: { status: S; email: string; apiOrigin: string } }[LoginStep]
+  | { status: 'locked'; email: string; apiOrigin: string; pin: boolean; notice?: { message: string } }
+  | { status: 'unlocked'; email: string; apiOrigin: string };
+
+export interface SettingsView {
+  settings: Settings;
+  pinEnabled: boolean;
+  /** A PIN needs the authenticator key, which exists once the account has codes. */
+  canSetPin: boolean;
+  email: string;
+  apiOrigin: string;
+}
+
+/** Background -> popup broadcast. */
+export interface LockedEvent {
+  event: 'locked';
+}
 
 export interface CodesResult {
   codes: Code[];
@@ -33,6 +50,13 @@ export interface Requests {
   getCodes: { req: Record<string, never>; res: CodesResult };
   sync: { req: Record<string, never>; res: CodesResult };
   logout: { req: Record<string, never>; res: AppState };
+  lock: { req: Record<string, never>; res: AppState };
+  unlockWithPin: { req: { pin: string }; res: AppState };
+  copied: { req: Record<string, never>; res: null };
+  getSettings: { req: Record<string, never>; res: SettingsView };
+  updateSettings: { req: Partial<Settings>; res: SettingsView };
+  setPin: { req: { pin: string }; res: SettingsView };
+  removePin: { req: Record<string, never>; res: SettingsView };
 }
 
 export type RequestType = keyof Requests;

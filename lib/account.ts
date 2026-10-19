@@ -11,21 +11,26 @@
  */
 import { DEFAULT_API_ORIGIN, EnteApi, normalizeApiOrigin, type KeyAttributes, type VerificationResponse } from './ente/api.ts';
 import {
+  ARGON_INTERACTIVE,
   bytesEqual,
   decryptBox,
+  encryptBox,
   deriveKEK,
   deriveSRPLoginKey,
   fromB64,
   initCrypto,
   openSealedBox,
   publicKeyFromSecretKey,
+  randomSaltB64,
   toB64,
   toB64URLSafe,
   wipe,
 } from './ente/crypto.ts';
 import { SrpClient } from './ente/srp.ts';
 import { appError, type SerializedError } from './errors.ts';
+import { touch } from './lock.ts';
 import type { AppState } from './messages.ts';
+import { pinAvailable, restorePinWrap } from './pin.ts';
 import {
   ACCOUNT_KEYS,
   getLocal,
@@ -37,6 +42,8 @@ import {
   type PendingLogin,
 } from './storage.ts';
 
+type UnlockKek = NonNullable<PendingLogin['unlockKek']>;
+
 // Login notices (like "session expired") live in memory only.
 let notice: SerializedError | undefined;
 
@@ -44,8 +51,12 @@ export const getState = async (): Promise<AppState> => {
   const { apiOrigin = DEFAULT_API_ORIGIN, email, token } = await getLocal('apiOrigin', 'email', 'token');
   const { pending, authKeyB64 } = await getSession('pending', 'authKeyB64');
   if (pending) return { status: pending.step, email: pending.email, apiOrigin: pending.apiOrigin };
-  // authKeyB64 is '' (but present) when unlocked with no codes yet.
-  if (token && email) return { status: authKeyB64 !== undefined ? 'unlocked' : 'locked', email, apiOrigin };
+  if (token && email) {
+    // authKeyB64 is '' (but present) when unlocked with no codes yet.
+    if (authKeyB64 !== undefined) return { status: 'unlocked', email, apiOrigin };
+    const { lockNotice } = await getSession('lockNotice');
+    return { status: 'locked', email, apiOrigin, pin: await pinAvailable(), notice: lockNotice };
+  }
   return { status: 'logged-out', email, apiOrigin, notice };
 };
 
@@ -105,6 +116,10 @@ export const submitPassword = async (password: string): Promise<AppState> => {
   if (!pending) return unlock(password);
   if (pending.step !== 'password') throw appError('login-expired');
 
+  // While we have the password, also derive a fast "interactive" KEK for later
+  // unlocks (Ente does the same on first login, credentials.tsx).
+  const unlockKek = deriveUnlockKek(password);
+
   // After an email code or 2FA we already have key attributes: derive the KEK
   // from them (credentials.tsx -> VerifyMasterPasswordForm).
   if (pending.keyAttributes) {
@@ -116,7 +131,7 @@ export const submitPassword = async (password: string): Promise<AppState> => {
         keyAttributes: ka,
         encryptedToken: pending.encryptedToken,
         token: pending.token,
-      });
+      }, unlockKek);
     } finally {
       wipe(kek);
     }
@@ -141,7 +156,7 @@ export const submitPassword = async (password: string): Promise<AppState> => {
       // The server could not prove it knows our verifier: don't trust it.
       throw appError('unexpected-response');
     }
-    return await afterVerification(pending, res, kek);
+    return await afterVerification(pending, res, kek, unlockKek);
   } finally {
     wipe(kek);
   }
@@ -159,7 +174,7 @@ export const submitTotp = async (code: string): Promise<AppState> => {
     // SRP path: we already have the KEK, so finish now.
     const kek = fromB64(pending.kekB64);
     try {
-      return await finishLogin(pending, kek, res);
+      return await finishLogin(pending, kek, res, pending.unlockKek);
     } finally {
       wipe(kek);
     }
@@ -184,6 +199,7 @@ const afterVerification = async (
   pending: PendingLogin,
   res: VerificationResponse,
   kek: Uint8Array | undefined,
+  unlockKek?: UnlockKek,
 ): Promise<AppState> => {
   // An unset V1 id is an empty string, hence || (second-factor-choice.ts).
   const twoFactorSessionID = res.twoFactorSessionID || res.twoFactorSessionIDV2;
@@ -196,6 +212,7 @@ const afterVerification = async (
       step: 'totp',
       twoFactorSessionID,
       kekB64: kek ? toB64(kek) : undefined,
+      unlockKek,
     });
     return getState();
   }
@@ -213,7 +230,7 @@ const afterVerification = async (
       keyAttributes: res.keyAttributes,
       encryptedToken: res.encryptedToken,
       token: res.token,
-    });
+    }, unlockKek);
   }
   await savePending({
     email: pending.email,
@@ -237,7 +254,7 @@ interface Credentials {
 }
 
 /** Decrypt the master key; a failure here means the password was wrong. */
-const decryptMasterKey = (ka: KeyAttributes, kek: Uint8Array): Uint8Array => {
+const decryptMasterKey = (ka: { encryptedKey: string; keyDecryptionNonce: string }, kek: Uint8Array): Uint8Array => {
   try {
     return decryptBox(ka.encryptedKey, ka.keyDecryptionNonce, kek);
   } catch {
@@ -252,7 +269,12 @@ const decryptMasterKey = (ka: KeyAttributes, kek: Uint8Array): Uint8Array => {
  * Only the authenticator key is kept (in memory). The master key could also
  * decrypt the user's other Ente data, so it is wiped straight away.
  */
-const finishLogin = async (pending: PendingLogin, kek: Uint8Array, creds: Credentials): Promise<AppState> => {
+const finishLogin = async (
+  pending: PendingLogin,
+  kek: Uint8Array,
+  creds: Credentials,
+  unlockKek?: UnlockKek,
+): Promise<AppState> => {
   const ka = creds.keyAttributes;
   const masterKey = decryptMasterKey(ka, kek);
   let secretKey: Uint8Array | undefined;
@@ -291,8 +313,10 @@ const finishLogin = async (pending: PendingLogin, kek: Uint8Array, creds: Creden
       entities: {},
       sinceTime: 0,
     });
-    await removeSession('pending');
+    if (unlockKek) await saveUnlockKeyAttributes(masterKey, unlockKek);
+    await removeSession('pending', 'pinWrapped', 'pinAttempts', 'lockNotice');
     await setSession({ authKeyB64: authKey ? toB64(authKey) : '' });
+    await touch();
     notice = undefined;
     return getState();
   } finally {
@@ -300,17 +324,50 @@ const finishLogin = async (pending: PendingLogin, kek: Uint8Array, creds: Creden
   }
 };
 
+/** Interactive-strength KEK with a fresh salt (argon.rs `derive_interactive_key`). */
+const deriveUnlockKek = (password: string): UnlockKek => {
+  const salt = randomSaltB64();
+  const key = deriveKEK(password, salt, ARGON_INTERACTIVE.opsLimit, ARGON_INTERACTIVE.memLimit);
+  const keyB64 = toB64(key);
+  wipe(key);
+  return { keyB64, salt, ...ARGON_INTERACTIVE };
+};
+
 /**
- * Unlock after a browser restart: re-derive the KEK from the stored (encrypted)
- * key attributes. Works offline. Milestone 3 adds auto-lock and a PIN option.
+ * Store the master key encrypted with the interactive KEK.
+ * Source: web/packages/accounts/services/key-attributes.ts
+ * `generateInteractiveKeyAttributes`. Like Ente's web app, this trades some
+ * offline brute-force resistance of the local copy for a fast unlock.
+ */
+const saveUnlockKeyAttributes = async (masterKey: Uint8Array, k: UnlockKek): Promise<void> => {
+  const unlockKey = fromB64(k.keyB64);
+  const box = encryptBox(masterKey, unlockKey);
+  wipe(unlockKey);
+  await setLocal({
+    unlockKeyAttributes: {
+      kekSalt: k.salt,
+      opsLimit: k.opsLimit,
+      memLimit: k.memLimit,
+      encryptedKey: box.encryptedData,
+      keyDecryptionNonce: box.nonce,
+    },
+  });
+};
+
+/**
+ * Unlock with the password after auto-lock or a browser restart. Uses the fast
+ * unlock key attributes when present (falls back to Ente's full-strength ones).
+ * Works offline.
  */
 const unlock = async (password: string): Promise<AppState> => {
-  const { keyAttributes: ka, authKeyEnc, token, apiOrigin = DEFAULT_API_ORIGIN } = await getLocal(
+  const { keyAttributes, unlockKeyAttributes, authKeyEnc, token, apiOrigin = DEFAULT_API_ORIGIN } = await getLocal(
     'keyAttributes',
+    'unlockKeyAttributes',
     'authKeyEnc',
     'token',
     'apiOrigin',
   );
+  const ka = unlockKeyAttributes ?? keyAttributes;
   if (!ka || !token) return getState();
 
   const kek = deriveKEK(password, ka.kekSalt, ka.opsLimit, ka.memLimit);
@@ -323,6 +380,8 @@ const unlock = async (password: string): Promise<AppState> => {
   })();
   let authKey: Uint8Array | undefined;
   try {
+    // Logged in before fast unlock existed: create it now, while we have the password.
+    if (!unlockKeyAttributes) await saveUnlockKeyAttributes(masterKey, deriveUnlockKek(password));
     let keyEnc = authKeyEnc ?? null;
     if (!keyEnc) {
       // No codes at login time; the user may have added some since.
@@ -332,10 +391,13 @@ const unlock = async (password: string): Promise<AppState> => {
     if (keyEnc) {
       authKey = decryptBox(keyEnc.encryptedKey, keyEnc.header, masterKey);
       await setSession({ authKeyB64: toB64(authKey) });
+      await restorePinWrap(authKey);
     } else {
       // Nothing to decrypt yet; mark as unlocked with an empty key slot.
       await setSession({ authKeyB64: '' });
     }
+    await removeSession('lockNotice');
+    await touch();
     return getState();
   } finally {
     wipe(masterKey, authKey);
@@ -347,7 +409,7 @@ const unlock = async (password: string): Promise<AppState> => {
 /** Clear the account but keep settings. `reason` is shown on the login screen. */
 export const clearAccount = async (reason?: SerializedError): Promise<void> => {
   await removeLocal(...ACCOUNT_KEYS);
-  await removeSession('authKeyB64', 'pending');
+  await removeSession('authKeyB64', 'pending', 'pinWrapped', 'pinAttempts', 'lastActivity', 'lockNotice');
   notice = reason;
 };
 

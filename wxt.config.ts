@@ -19,7 +19,7 @@ export default defineConfig({
     description: 'Your 2FA codes, one click away. Unofficial, not affiliated with Ente.',
     // Each permission is justified in README.md. No host permissions: Ente's API
     // allows cross-origin requests, so we don't need access to any website.
-    permissions: ['storage'],
+    permissions: ['storage', 'alarms', 'idle', 'clipboardWrite'],
     action: {
       default_title: 'Duckling',
     },
