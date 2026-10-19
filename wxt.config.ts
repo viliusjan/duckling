@@ -19,7 +19,11 @@ export default defineConfig({
     description: 'Your 2FA codes, one click away. Unofficial, not affiliated with Ente.',
     // Each permission is justified in README.md. No host permissions: Ente's API
     // allows cross-origin requests, so we don't need access to any website.
-    permissions: ['storage', 'alarms', 'idle', 'clipboardWrite'],
+    permissions: ['storage', 'alarms', 'idle', 'clipboardWrite', 'activeTab'],
+    commands: {
+      // "2" for 2FA. Firefox maps Ctrl to Cmd on macOS. Changeable in about:addons.
+      _execute_action: { suggested_key: { default: 'Ctrl+Shift+2' }, description: 'Open Duckling' },
+    },
     action: {
       default_title: 'Duckling',
     },
