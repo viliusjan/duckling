@@ -3,9 +3,17 @@
 > Your 2FA codes, one click away.
 
 **Unofficial. Not affiliated with or endorsed by Ente.** Duckling is a community
-Firefox extension for people who already use [Ente Auth](https://ente.io/auth).
+Firefox extension for people who already use [Ente Auth](https://ente.com/auth).
 
-Status: in development (milestone 4: UX polish).
+![Duckling showing codes for the current site](store/screenshots/1-this-site.png)
+
+## Install
+
+- **Firefox Add-ons:** coming soon (version 1.0.0 is awaiting review).
+- **From source:** see [BUILDING.md](BUILDING.md), then load
+  `.output/firefox-mv3/manifest.json` in `about:debugging`.
+
+Requires Firefox 140 or newer (including Firefox ESR 140) and an existing Ente Auth account.
 
 ## What it does
 
@@ -29,9 +37,13 @@ Status: in development (milestone 4: UX polish).
   computer locks, and when Firefox closes. Unlock with your password or an
   optional PIN.
 - Clears the clipboard 30 seconds after you copy a code.
-- Not yet: passkey two-factor login (use a TOTP second factor for now).
+- Not yet: passkey two-factor login (use a TOTP second factor for now), and
+  adding or editing codes (use the Ente Auth app; Duckling is read-only).
 
 ## Security model
+
+Full details, including exactly what is sent to Ente, are in the
+[privacy policy](PRIVACY.md). In short:
 
 | Where | What | When it's cleared |
 | --- | --- | --- |
@@ -81,12 +93,13 @@ allows requests from extensions directly.
 
 ## Build from source
 
-Requirements: Node.js 22+, npm 10+.
+Requirements: Node.js 22, npm 10. Full instructions (and notes for AMO
+reviewers) are in [BUILDING.md](BUILDING.md).
 
 ```sh
 npm ci
-npm run build   # output: .output/firefox-mv3/
-npm run zip     # AMO upload zip: .output/*.zip
+npm run build        # output: .output/firefox-mv3/
+npm run release      # tests, type-check, AMO zip, lint, and the source archive
 ```
 
 ## Development
@@ -102,7 +115,7 @@ npm run fake-server  # local fake Ente API for UI work, see below
 The fake server lets you try every screen without a real account. Start it,
 then log in through Duckling with:
 
-- Server: `http://localhost:8787` (click "Using a self-hosted server?")
+- Server: `http://localhost:8787` (click "Using a self-hosted Ente server?")
 - Email: `test@example.com`
 - Password: `hunter2-but-longer`
 - Two-factor code: `123456`
