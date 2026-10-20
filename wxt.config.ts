@@ -1,5 +1,19 @@
 import { defineConfig } from 'wxt';
 import preact from '@preact/preset-vite';
+import type { Plugin } from 'vite';
+
+/**
+ * The bundler leaves the absolute project path in a few comments (e.g. WXT's
+ * virtual background entry). Replace it with "." so builds are byte-identical
+ * on any machine (AMO reproducibility) and don't reveal the builder's folders.
+ */
+const stripProjectPath = (): Plugin => {
+  const root = process.cwd();
+  return {
+    name: 'duckling:strip-project-path',
+    renderChunk: (code) => (code.includes(root) ? { code: code.split(root).join('.'), map: null } : null),
+  };
+};
 
 export default defineConfig({
   srcDir: '.',
@@ -10,7 +24,7 @@ export default defineConfig({
     zipSources: false,
   },
   vite: () => ({
-    plugins: [preact()],
+    plugins: [preact(), stripProjectPath()],
     build: {
       // Readable output makes AMO source review easier and builds reproducible.
       minify: false,
