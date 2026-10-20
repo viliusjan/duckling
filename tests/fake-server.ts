@@ -18,6 +18,8 @@ const fake = new FakeEnte({
     'otpauth://totp/Proton:duck%40proton.me?secret=JBSWY3DPEHPK3PXU&issuer=Proton',
     'otpauth://totp/Cloudflare:ops%40acme.test?secret=JBSWY3DPEHPK3PXV&issuer=Cloudflare&codeDisplay=%7B%22tags%22%3A%5B%22Work%22%2C%22Dev%22%5D%7D',
     'otpauth://totp/KTU:viljan9?secret=JBSWY3DPEHPK3PXW&issuer=KTU',
+    'otpauth://totp/Microsoft:alex%40outlook.com?secret=JBSWY3DPEHPK3PXX&issuer=Microsoft',
+    'otpauth://totp/Bitwarden:alex%40example.com?secret=JBSWY3DPEHPK3PXY&issuer=Bitwarden',
   ],
 });
 console.log(`keys generated in ${Date.now() - t0} ms`);

@@ -46,6 +46,12 @@ function useSecondTick(): number {
 function useCurrentSite(): Site | undefined {
   const [site, setSite] = useState<Site>();
   useEffect(() => {
+    // Development builds only (removed from release builds): ?site=example.com
+    // fakes the current tab, for screenshots and UI testing.
+    if (import.meta.env.DEV) {
+      const fake = new URLSearchParams(location.search).get('site');
+      if (fake) return setSite(siteFromUrl(`https://${fake}`));
+    }
     browser.tabs
       .query({ active: true, currentWindow: true })
       .then(([tab]) => setSite(siteFromUrl(tab?.url)))
