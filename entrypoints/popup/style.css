@@ -264,3 +264,6 @@ kbd { font-family: inherit; font-size: 12px; padding: 2px 6px; border-radius: 4p
 
 /* Only the list scrolls; header, tags, notices and footer keep their size. */
 .topbar, .tags, .notices, .bottombar { flex-shrink: 0; }
+
+/* Firefox otherwise draws a light scrollbar thumb even in dark mode. */
+.scroll, .settings, body { scrollbar-color: var(--stroke-strong) transparent; }
