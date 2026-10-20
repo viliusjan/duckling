@@ -1,9 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <!-- Duckling icon, original artwork for this project (AGPL-3.0). -->
-  <rect width="128" height="128" rx="28" fill="#1f2a44"/>
-  <ellipse cx="66" cy="88" rx="40" ry="24" fill="#ffc928"/>
-  <circle cx="54" cy="52" r="24" fill="#ffc928"/>
-  <path d="M74 50 L98 56 L74 62 Z" fill="#ff8a1f"/>
-  <circle cx="58" cy="46" r="4.5" fill="#1f2a44"/>
-  <path d="M60 86 q14 -14 30 -4 q-12 12 -30 4 z" fill="#f2b100"/>
+  <!-- Duckling app icon. Original artwork for this project (AGPL-3.0). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3B1E6E"/>
+      <stop offset="1" stop-color="#1B0F33"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFE066"/>
+      <stop offset="1" stop-color="#FFC21A"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#bg)"/>
+  <!-- body -->
+  <path d="M26 82c0-14 12-22 26-22h14c20 0 36 8 36 24 0 16-16 26-38 26S26 100 26 82z" fill="url(#body)"/>
+  <!-- tail -->
+  <path d="M96 76c6-4 10-10 10-16 4 8 2 18-6 24z" fill="#FFC21A"/>
+  <!-- head -->
+  <circle cx="50" cy="48" r="24" fill="url(#body)"/>
+  <!-- tuft -->
+  <path d="M46 25c-2-6 2-10 7-10-2 3-1 6 2 8z" fill="#FFC21A"/>
+  <!-- beak -->
+  <path d="M70 47c8-3 16-2 20 2-3 5-11 8-20 6z" fill="#FF8A1F"/>
+  <path d="M70 53c6 1 13 0 18-3" stroke="#D9650B" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- eye -->
+  <circle cx="56" cy="43" r="4.6" fill="#1B0F33"/>
+  <circle cx="57.6" cy="41.4" r="1.5" fill="#fff"/>
+  <!-- cheek -->
+  <circle cx="48" cy="55" r="4" fill="#FF8A8A" opacity=".45"/>
+  <!-- wing -->
+  <path d="M52 80c10-6 26-6 32 2-8 10-24 12-32-2z" fill="#F5A800"/>
 </svg>
