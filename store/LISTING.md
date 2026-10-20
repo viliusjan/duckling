@@ -72,7 +72,7 @@ GNU Affero General Public License v3.0 (AGPL-3.0)
 
 ## Privacy policy
 
-Paste the contents of `PRIVACY.md`.
+Paste the contents of `privacy-policy.txt` (plain-text copy of `PRIVACY.md`; AMO does not render Markdown tables).
 
 ## Screenshots (1280×800, upload in this order)
 
