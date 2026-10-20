@@ -2,7 +2,7 @@
   "name": "duckling",
   "description": "Unofficial Ente Auth for Firefox. Your 2FA codes, one click away.",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "license": "AGPL-3.0-only",
   "scripts": {
@@ -15,7 +15,9 @@
     "test": "node --test --experimental-strip-types --no-warnings \"tests/**/*.test.ts\"",
     "fake-server": "node --experimental-strip-types --no-warnings tests/fake-server.ts",
     "icons": "node --experimental-strip-types --no-warnings scripts/build-icons.ts",
-    "pretest": "npm run icons --silent"
+    "pretest": "npm run icons --silent",
+    "zip:sources": "mkdir -p .output && git archive --format=zip --prefix=duckling-$npm_package_version/ -o .output/duckling-$npm_package_version-sources.zip HEAD",
+    "release": "npm test && npm run compile && npm run zip && npm run lint:ext && npm run zip:sources"
   },
   "dependencies": {
     "@noble/hashes": "2.4.0",
@@ -32,5 +34,9 @@
     "typescript": "7.0.2",
     "web-ext": "10.8.0",
     "wxt": "0.21.4"
+  },
+  "engines": {
+    "node": ">=22.12 <23",
+    "npm": ">=10"
   }
 }

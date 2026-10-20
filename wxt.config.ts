@@ -4,6 +4,11 @@ import preact from '@preact/preset-vite';
 export default defineConfig({
   srcDir: '.',
   manifestVersion: 3,
+  zip: {
+    // The source bundle for AMO reviewers is made with `git archive` instead
+    // (npm run zip:sources): exactly the committed files, nothing local.
+    zipSources: false,
+  },
   vite: () => ({
     plugins: [preact()],
     build: {
@@ -16,7 +21,8 @@ export default defineConfig({
   manifest: {
     name: 'Duckling – unofficial Ente Auth',
     short_name: 'Duckling',
-    description: 'Your 2FA codes, one click away. Unofficial, not affiliated with Ente.',
+    description: 'Your Ente Auth 2FA codes in Firefox, one click away. Unofficial, not affiliated with Ente.',
+    homepage_url: 'https://github.com/viliusjan/duckling',
     // Each permission is justified in README.md. No host permissions: Ente's API
     // allows cross-origin requests, so we don't need access to any website.
     permissions: ['storage', 'alarms', 'idle', 'clipboardWrite', 'activeTab'],
@@ -26,6 +32,13 @@ export default defineConfig({
     },
     action: {
       default_title: 'Duckling',
+      default_icon: { 16: 'toolbar/on-light-16.png', 32: 'toolbar/on-light-32.png' },
+      // Firefox picks the variant that contrasts with the toolbar theme:
+      // "light" is the icon for dark toolbars, "dark" the one for light toolbars.
+      theme_icons: [
+        { light: 'toolbar/on-dark-16.png', dark: 'toolbar/on-light-16.png', size: 16 },
+        { light: 'toolbar/on-dark-32.png', dark: 'toolbar/on-light-32.png', size: 32 },
+      ],
     },
     content_security_policy: {
       // 'wasm-unsafe-eval' lets libsodium compile its WebAssembly (needed for
@@ -39,7 +52,11 @@ export default defineConfig({
       gecko: {
         id: 'duckling@viliusjan.github.io',
         strict_min_version: '140.0',
-        data_collection_permissions: { required: ['none'] },
+        // Declared honestly: your email and login proofs (SRP proof, email and
+        // 2FA codes, session token) are sent to Ente's servers, which Mozilla
+        // counts as transmission even though it's your own account. Nothing
+        // is ever sent to the Duckling developer or anyone else.
+        data_collection_permissions: { required: ['authenticationInfo', 'personallyIdentifyingInfo'] },
       },
     },
   },
